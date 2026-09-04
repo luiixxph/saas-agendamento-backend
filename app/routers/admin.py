@@ -30,7 +30,7 @@ def exigir_admin(x_admin_secret: str = Header(None)):
 
 
 @router.post("/criar-tenant", status_code=201)
-def criar_tenant(dados: NovoTenantInput, _=Header(None), x_admin_secret: str = Header(None)):
+def criar_tenant(dados: NovoTenantInput, x_admin_secret: str = Header(None)):
     exigir_admin(x_admin_secret)
 
     conn = get_connection()
