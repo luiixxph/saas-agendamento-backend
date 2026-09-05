@@ -53,6 +53,36 @@ def criar_agendamento(dados: AgendamentoInput):
         release_connection(conn)
 
 
+@router.get("/disponibilidade")
+def horarios_ocupados(tenant: str, serviceId: int, data: str):
+    """Rota PÚBLICA — devolve os horários já ocupados de um serviço em um dia específico,
+    para o front desabilitar essas opções antes do visitante tentar agendar."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id FROM tenants WHERE slug = %s", (tenant,))
+        tenant_row = cursor.fetchone()
+        if tenant_row is None:
+            raise HTTPException(status_code=404, detail="Negócio não encontrado.")
+        tenant_id = tenant_row[0]
+
+        cursor.execute(
+            """SELECT horario FROM appointments
+               WHERE tenant_id = %s AND service_id = %s
+                 AND horario::date = %s
+                 AND status = 'confirmado'
+               ORDER BY horario""",
+            (tenant_id, serviceId, data),
+        )
+        linhas = cursor.fetchall()
+
+        return {"horariosOcupados": [str(l[0]) for l in linhas]}
+    finally:
+        cursor.close()
+        release_connection(conn)
+
+
 @router.get("")
 def listar_agendamentos(usuario: dict = Depends(obter_usuario_atual)):
     exigir_owner(usuario)
